@@ -14,4 +14,25 @@ attn_scores_2 = torch.empty(inputs.shape[0])
 for i, x_i in enumerate(inputs):
     attn_scores_2[i] = torch.dot(x_i, query)
 
-print(attn_scores_2)
+# Basic implementation of softmax function for normalazing the attention scores
+def softmax_naive(x):
+    return torch.exp(x) / torch.exp(x).sum(dim=0)
+
+attn_weights_2_naive = softmax_naive(attn_scores_2)
+attn_weights_2 = torch.softmax(attn_scores_2, dim=0)
+
+# Same operation
+attn_scores = torch.empty(6, 6)
+for i, x_i in enumerate(inputs):
+    for j, x_j in enumerate(inputs):
+        attn_scores[i, j] = torch.dot(x_i, x_j)
+
+# But this is faster
+attn_scores = inputs @ inputs.T
+print(attn_scores)
+
+attn_weights = torch.softmax(attn_scores, dim=-1)
+print(attn_weights)
+
+all_context_vecs = attn_weights @ inputs
+print(all_context_vecs)
