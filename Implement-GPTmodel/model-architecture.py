@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import tiktoken
 
 GPT_CONFIG_124M = {
     "vocab_size": 50257, # Vocabulary size
@@ -11,7 +12,7 @@ GPT_CONFIG_124M = {
     "qkv_bias": False # Query-Key-Value bias
 }
 
-class DummyGPTModel(nn.Model):
+class DummyGPTModel(nn.Module):
     def __init__(self, cfg):
         super().__init__()
         self.tok_emb = nn.Embedding(cfg["vocab_size"], cfg["emb_dim"])
@@ -39,3 +40,32 @@ class DummyGPTModel(nn.Model):
         logits = self.out_head(x)
 
         return logits
+
+class DummyTransformerBlock(nn.Module):
+    def __init__(self, cfg):
+        super().__init__()
+
+    def forward(self, x):
+        return x
+
+class DummyLayerNorm(nn.Module):
+    def __init__(self, normalized_shape, eps=1e-5):
+        super().__init__()
+
+    def forward(self, x):
+        return x
+
+tokenizer = tiktoken.get_encoding("gpt2")
+batch = []
+txt1 = "Every effort moves you"
+txt2 = "Every day holds a"
+
+batch.append(torch.tensor(tokenizer.encode(txt1)))
+batch.append(torch.tensor(tokenizer.encode(txt2)))
+batch = torch.stack(batch, dim=0)
+
+torch.manual_seed(123)
+model = DummyGPTModel(GPT_CONFIG_124M)
+logits = model(batch)
+print("Ouput shape:", logits.shape)
+print(logits)
