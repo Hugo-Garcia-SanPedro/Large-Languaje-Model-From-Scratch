@@ -190,4 +190,29 @@ token_ids = generate_text_simple(
     max_new_tokens=10,
     context_size=GPT_CONFIG_124M["context_length"]
 )
-print("Output text:\n", token_ids_to_text(token_ids, tokenizer))
+
+inputs = torch.tensor([[16833, 3626, 6100],
+                        [40, 1107, 588]])
+targets = torch.tensor([[3626, 6100, 345],
+                        [1107, 588, 11311]])
+
+with torch.no_grad():
+    logits = model(inputs)
+probas = torch.softmax(logits, dim=-1)
+
+token_ids = torch.argmax(probas, dim=-1, keepdim=True)
+
+text_idx = 0
+target_probas_1 = probas[text_idx, [0, 1, 2], targets[text_idx]]
+text_idx = 1
+target_probas_2 = probas[text_idx, [0, 1, 2], targets[text_idx]]
+log_probas = torch.log(torch.cat((target_probas_1, target_probas_2)))
+
+avg_log_probas = torch.mean(log_probas)
+neg_avg_log_probas = avg_log_probas * -1
+
+logits_flat = logits.flatten(0, 1)
+targets_flat = targets.flatten()
+
+loss = torch.nn.functional.cross_entropy(logits_flat, targets_flat)
+perplexity = torch.exp(loss)
