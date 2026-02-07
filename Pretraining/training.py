@@ -462,3 +462,5 @@ token_ids = generate(
     top_k=25,
     temperature=1.4
 )
+
+torch.save(model.state_dict(), "model.pth")
