@@ -306,6 +306,28 @@ def load_weights_into_gpt(gpt, params):
     gpt.final_norm.shift = assign(gpt.final_norm.shift, params["b"])
     gpt.out_head.weight = assign(gpt.out_head.weight, params["wte"])
 
+def generate_text_simple(model, idx, max_new_tokens, context_size):
+    for _ in range(max_new_tokens):
+        idx_cond = idx[:, -context_size:]
+        with torch.no_grad():
+            logits = model(idx_cond)
+
+        logits = logits[:, -1, :]
+        probas = torch.softmax(logits, dim=-1)
+        idx_next = torch.argmax(probas, dim=-1, keepdim=True)
+        idx = torch.cat((idx, idx_next), dim=-1)
+
+    return idx
+
+def text_to_token_ids(text, tokenizer):
+    encoded = tokenizer.encode(text, allowed_special={'<|endoftext|>'})
+    encoded_tensor = torch.tensor(encoded).unsqueeze(0)
+    return encoded_tensor
+
+def token_ids_to_text(token_ids, tokenizer):
+    flat = token_ids.squeeze(0)
+    return tokenizer.decode(flat.tolist())
+
 # Initializing a model with pretrained weights
 CHOOSE_MODEL = "gpt2-small (124M)"
 INPUT_PROMPT = "Every effort moves"
@@ -330,3 +352,25 @@ settings, params = download_and_load_gpt2(
 model = GPTModel(BASE_CONFIG)
 load_weights_into_gpt(model, params)
 model.eval()
+
+text_1 = "Every effort moves you"
+token_ids = generate_text_simple(
+    model=model,
+    idx=text_to_token_ids(text_1, tokenizer),
+    max_new_tokens=15,
+    context_size=BASE_CONFIG["context_length"]
+)
+
+text_2 = (
+    "Is the following text 'spam'? Answer with 'yes' or 'no':"
+    " 'You are a winner you hav been specially"
+    " selected to receive $1000 cash or a $2000 award.'"
+)
+token_ids = generate_text_simple(
+    model=model,
+    idx=text_to_token_ids(text_2, tokenizer),
+    max_new_tokens=23,
+    context_size=BASE_CONFIG["context_length"]
+)
+
+print(model)
