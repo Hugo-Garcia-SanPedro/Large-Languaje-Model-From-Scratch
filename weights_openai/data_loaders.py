@@ -1,6 +1,7 @@
 import tiktoken
 import torch
 from torch.utils.data import Dataset
+import pandas as pd
 
 tokenizer = tiktoken.get_encoding("gpt2")
 print(tokenizer.encode("<|endoftext|>", allowed_special={"<|endoftext|>"}))
@@ -48,3 +49,11 @@ class SpamDataset(Dataset):
             if encoded_length > max_length:
                 max_length = encoded_length
         return max_length
+
+train_dataset = SpamDataset(
+    csv_file="train.csv",
+    max_length=None,
+    tokenizer=tokenizer
+)
+
+print(train_dataset.max_length)
